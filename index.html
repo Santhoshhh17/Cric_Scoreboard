@@ -221,9 +221,9 @@
 </div>
 <p class="text-accent uppercase tracking-widest text-sm" id="toss-status">Waiting for Toss...</p>
 </div>
-<div>
+<div id="overs-section">
   <button 
-    onclick="startMatchWithOvers()"
+    onclick="goNext()"
     style="
       padding:16px 40px;
       font-size:18px;
@@ -264,6 +264,61 @@
 
 
 
+
+<!--bowling selection-->
+
+<section class="page-section bg-background" id="bowler-page">
+
+  <div class="p-4 border-b border-surface-variant flex items-center gap-4">
+    <button onclick="navigateTo('toss-page')">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </button>
+    <h2 class="font-headline font-bold">Select Opening Bowler</h2>
+  </div>
+
+  <div class="p-4 space-y-3" id="bowler-list"></div>
+
+</section>
+
+
+
+
+
+<!--batting selection-->
+
+<section class="page-section bg-background" id="batsman-page">
+
+  <div class="p-4 border-b border-surface-variant flex items-center gap-4">
+    <button onclick="navigateTo('bowler-page')">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </button>
+    <h2 class="font-headline font-bold">Select Opening Batsmen</h2>
+  </div>
+
+  <div class="p-4 space-y-3" id="batsman-list"></div>
+
+</section>
+
+
+
+
+
+
+
+<!--bowling selection-->
+
+<section class="page-section bg-background" id="bowler-page">
+
+  <div class="p-4 border-b border-surface-variant flex items-center gap-4">
+    <button onclick="navigateTo('toss-page')">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </button>
+    <h2 class="font-headline font-bold">Select Opening Bowler</h2>
+  </div>
+
+  <div class="p-4 space-y-3" id="bowler-list"></div>
+
+</section>
 
 
 
@@ -418,7 +473,7 @@
 
 let playerCount = 0;
 
-    function startMatchWithOvers(){
+    function goNext(){
 
   let overs = prompt("Enter number of overs (1 - 50)");
 
@@ -433,6 +488,8 @@ let playerCount = 0;
 
   // ✅ Store
   gameState.totalOvers = overs;
+
+  document.getElementById("overs-section").style.display = "none";
 
   // Optional backup
   localStorage.setItem("selectedOvers", overs);
@@ -631,8 +688,136 @@ function removePlayer(btn) {
             gameState.bowlingTeam = winner;
         }
         initMatch();
-        navigateTo('scoring-page');
+        loadBatsmanSelection();
+
+        
     }
+
+
+
+
+
+    //batting selection
+
+
+    let selectedBatsmen = [];
+
+function loadBatsmanSelection() {
+
+    const list = document.getElementById('batsman-list');
+    list.innerHTML = '';
+    selectedBatsmen = [];
+
+    gameState.battingTeam.players.forEach((p, idx) => {
+
+        const btn = document.createElement('button');
+
+        btn.className = "w-full bg-surface p-4 rounded text-left font-bold";
+
+        btn.innerText = p.name;
+
+        btn.onclick = () => selectBatsman(btn, idx);
+
+        list.appendChild(btn);
+    });
+
+    navigateTo('batsman-page');
+}
+
+
+
+function selectBatsman(btn, idx) {
+
+    // already selected → ignore
+    if (selectedBatsmen.includes(idx)) return;
+
+    selectedBatsmen.push(idx);
+
+    // UI highlight
+    btn.style.background = "#E63946"; // primary color
+    btn.style.color = "white";
+
+    // only 2 players allowed
+    if (selectedBatsmen.length === 2) {
+        startMatchAfterBatsmanSelect();
+    }
+}
+
+
+
+function startMatchAfterBatsmanSelect() {
+
+    gameState.strikerIdx = selectedBatsmen[0];
+    gameState.nonStrikerIdx = selectedBatsmen[1];
+
+    // ❌ Don't start match here
+    // navigateTo('scoring-page');
+
+    // ✅ Go to bowler selection
+    loadBowlerSelection();
+}
+
+
+
+
+
+
+
+
+//bowling selection
+
+function loadBowlerSelection() {
+
+    const list = document.getElementById('bowler-list');
+    list.innerHTML = '';
+
+    gameState.bowlingTeam.players.forEach((p, idx) => {
+
+        const btn = document.createElement('button');
+
+        btn.className = "w-full bg-surface p-4 rounded text-left font-bold";
+
+        btn.innerText = p.name;
+
+        btn.onclick = () => {
+            gameState.bowlerIdx = idx;
+
+            // ✅ FINAL STEP
+            startMatchFinal();
+        };
+
+        list.appendChild(btn);
+    });
+
+    navigateTo('bowler-page');
+}
+
+
+
+function startMatchAfterBowlerSelect() {
+
+    // default opening batsmen
+    gameState.strikerIdx = 0;
+    gameState.nonStrikerIdx = 1;
+
+    navigateTo('scoring-page');
+    updateScoringUI();
+
+    document.getElementById('recent-balls').innerHTML = '';
+}
+
+
+function startMatchFinal() {
+
+    navigateTo('scoring-page');
+    updateScoringUI();
+
+    document.getElementById('recent-balls').innerHTML = '';
+}
+
+
+
+
     function initMatch() {
         updateScoringUI();
     }
@@ -756,10 +941,17 @@ function showWicketOptions() {
     document.getElementById('modal-container').classList.add('hidden');
 
     // Next player or end innings
-    if (gameState.wickets >= 10) {
-        endInnings();
-    } else {
-        promptNewPlayer('striker');
+    let totalPlayers = gameState.battingTeam.players.length;
+
+if(gameState.wickets >= totalPlayers - 1) {
+    endInnings();
+    return; // 🔥 important (stop further execution)
+}
+
+else {
+        if(gameState.wickets < totalPlayers - 1){
+    promptNewPlayer('striker');
+}
     }
 
     checkOverAndInnings();
@@ -1031,9 +1223,10 @@ if (gameState.matchOver) {
   <div class="flex justify-between items-center w-full">
 
     <div>
-      <h4 class="font-bold text-sm">${m.teamA} vs ${m.teamB}</h4>
+      <h4>${m.teamA.name} vs ${m.teamB.name}</h4>
       <p class="text-xs text-primary font-bold uppercase mt-1">${m.result}</p>
       <p class="text-xs text-accent">${m.date}</p>
+      
     </div>
 
     <button 
