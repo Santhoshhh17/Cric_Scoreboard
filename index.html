@@ -329,66 +329,6 @@
 
 
 
-<!--bowling selection-->
-
-<section class="page-section bg-background" id="bowler-page">
-
-  <div class="p-4 border-b border-surface-variant flex items-center gap-4">
-    <button onclick="navigateTo('toss-page')">
-      <span class="material-symbols-outlined">arrow_back</span>
-    </button>
-    <h2 class="font-headline font-bold">Select Opening Bowler</h2>
-  </div>
-
-  <div class="p-4 space-y-3" id="bowler-list"></div>
-
-</section>
-
-
-
-
-
-<!--batting selection-->
-
-<section class="page-section bg-background" id="batsman-page">
-
-  <div class="p-4 border-b border-surface-variant flex items-center gap-4">
-    <button onclick="navigateTo('bowler-page')">
-      <span class="material-symbols-outlined">arrow_back</span>
-    </button>
-    <h2 class="font-headline font-bold">Select Opening Batsmen</h2>
-  </div>
-
-  <div class="p-4 space-y-3" id="batsman-list"></div>
-
-</section>
-
-
-
-
-
-
-
-<!--bowling selection-->
-
-<section class="page-section bg-background" id="bowler-page">
-
-  <div class="p-4 border-b border-surface-variant flex items-center gap-4">
-    <button onclick="navigateTo('toss-page')">
-      <span class="material-symbols-outlined">arrow_back</span>
-    </button>
-    <h2 class="font-headline font-bold">Select Opening Bowler</h2>
-  </div>
-
-  <div class="p-4 space-y-3" id="bowler-list"></div>
-
-</section>
-
-
-
-
-
-
 
 
 <section class="page-section bg-background" id="scoring-page">
@@ -572,9 +512,9 @@ let playerCount = 0;
         innings: 1, // 1 or 2
         battingTeam: null,
         bowlingTeam: null,
-        strikerIdx: 0,
-        nonStrikerIdx: 1,
-        bowlerIdx: 0,
+        strikerIdx: null,
+        nonStrikerIdx: null,
+        bowlerIdx: null,
         score: 0,
         wickets: 0,
         balls: 0,
@@ -582,6 +522,12 @@ let playerCount = 0;
         matchOver: false,
         ballHistory: [],
         matches: JSON.parse(localStorage.getItem('matchHistory') || '[]')
+
+
+        
+
+
+
     };
     function navigateTo(pageId) {
         document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
@@ -742,144 +688,67 @@ function removePlayer(btn) {
         document.getElementById('coin-graphic').classList.add('bg-primary/20', 'border-primary');
     }
     function setDecision(dec) {
-        const winner = gameState.tossWinner;
-        const loser = winner === gameState.teamA ? gameState.teamB : gameState.teamA;
-        if (dec === 'bat') {
-            gameState.battingTeam = winner;
-            gameState.bowlingTeam = loser;
-        } else {
-            gameState.battingTeam = loser;
-            gameState.bowlingTeam = winner;
-        }
-        initMatch();
-        loadBatsmanSelection();
 
-        
+    const winner = gameState.tossWinner;
+    const loser = winner === gameState.teamA ? gameState.teamB : gameState.teamA;
+
+    // 🟢 Set batting & bowling
+    if (dec === 'bat') {
+        gameState.battingTeam = winner;
+        gameState.bowlingTeam = loser;
+    } else {
+        gameState.battingTeam = loser;
+        gameState.bowlingTeam = winner;
     }
 
-
-
-
-
-    //batting selection
-
-
-    let selectedBatsmen = [];
-
-function loadBatsmanSelection() {
-
-    const list = document.getElementById('batsman-list');
-    list.innerHTML = '';
-    selectedBatsmen = [];
-
-    gameState.battingTeam.players.forEach((p, idx) => {
-
-        const btn = document.createElement('button');
-
-        btn.className = "w-full bg-surface p-4 rounded text-left font-bold";
-
-        btn.innerText = p.name;
-
-        btn.onclick = () => selectBatsman(btn, idx);
-
-        list.appendChild(btn);
-    });
-
-    navigateTo('batsman-page');
-}
-
-
-
-function selectBatsman(btn, idx) {
-
-    // already selected → ignore
-    if (selectedBatsmen.includes(idx)) return;
-
-    selectedBatsmen.push(idx);
-
-    // UI highlight
-    btn.style.background = "#E63946"; // primary color
-    btn.style.color = "white";
-
-    // only 2 players allowed
-    if (selectedBatsmen.length === 2) {
-        startMatchAfterBatsmanSelect();
-    }
-}
-
-
-
-function startMatchAfterBatsmanSelect() {
-
-    gameState.strikerIdx = selectedBatsmen[0];
-    gameState.nonStrikerIdx = selectedBatsmen[1];
-
-    // ❌ Don't start match here
-    // navigateTo('scoring-page');
-
-    // ✅ Go to bowler selection
-    loadBowlerSelection();
+    // 🟢 Start match directly
+    startMatch();
 }
 
 
 
 
+    function startMatch() {
+
+    // 🟢 Reset match basics
+    gameState.score = 0;
+    gameState.wickets = 0;
+    gameState.balls = 0;
+    gameState.matchOver = false;
+    gameState.ballHistory = [];
 
 
 
-
-//bowling selection
-
-function loadBowlerSelection() {
-
-    const list = document.getElementById('bowler-list');
-    list.innerHTML = '';
-
-    gameState.bowlingTeam.players.forEach((p, idx) => {
-
-        const btn = document.createElement('button');
-
-        btn.className = "w-full bg-surface p-4 rounded text-left font-bold";
-
-        btn.innerText = p.name;
-
-        btn.onclick = () => {
-            gameState.bowlerIdx = idx;
-
-            // ✅ FINAL STEP
-            startMatchFinal();
-        };
-
-        list.appendChild(btn);
-    });
-
-    navigateTo('bowler-page');
-}
+gameState.battingTeam = gameState.teamA; // or B
+gameState.bowlingTeam = gameState.teamB;
 
 
+    // 🟢 Set innings 1
+    gameState.innings = 1;
 
-function startMatchAfterBowlerSelect() {
+    // 🟢 Make sure teams already assigned (after toss)
+    // gameState.battingTeam
+    // gameState.bowlingTeam
 
-    // default opening batsmen
-    gameState.strikerIdx = 0;
-    gameState.nonStrikerIdx = 1;
+    // 🟢 Clear previous selections
+    gameState.strikerIdx = null;
+    gameState.nonStrikerIdx = null;
+    gameState.bowlerIdx = null;
 
+    // 🟢 Go to scoring page
     navigateTo('scoring-page');
-    updateScoringUI();
 
+    // 🟢 Clear recent balls UI
     document.getElementById('recent-balls').innerHTML = '';
+
+    // 🟢 Ask user to select players
+    setTimeout(() => {
+        promptSelectOpeners();
+    }, 300);
 }
 
 
-function startMatchFinal() {
-
-    navigateTo('scoring-page');
-    updateScoringUI();
-
-    document.getElementById('recent-balls').innerHTML = '';
-}
-
-
+    
 
 
     function initMatch() {
@@ -912,6 +781,7 @@ function startMatchFinal() {
             document.getElementById('target-display').classList.remove('hidden');
             document.getElementById('target-runs').innerText = gameState.target;
         }
+        if(gameState.strikerIdx === null || gameState.bowlerIdx === null) return;
     }
     function addRuns(r) {
         if(gameState.matchOver) return;
@@ -1030,30 +900,47 @@ else {
         gameState.strikerIdx = gameState.nonStrikerIdx;
         gameState.nonStrikerIdx = temp;
     }
+
+
+
+
+    
     function checkOverAndInnings() {
 
-    // ✅ Calculate overs
-    let completedOvers = Math.floor(gameState.balls / 6);
+    // 🟢 Calculate overs
+    const completedOvers = Math.floor(gameState.balls / 6);
 
-    // ✅ Over completed logic
+    // 🟢 If match already over → stop everything
+    if (gameState.matchOver) return;
+
+    // 🟢 Check innings end (overs limit)
+    if (gameState.totalOvers && completedOvers >= gameState.totalOvers) {
+        endInnings();
+        return; // ❗ STOP HERE (important)
+    }
+
+    // 🟢 Over complete → change strike + ask bowler
     if (gameState.balls % 6 === 0 && gameState.balls > 0) {
         rotateStrike();
-        promptNewPlayer('bowler');
+
+        // ❗ Only ask bowler if match not over
+        if (!gameState.matchOver) {
+            promptNewPlayer('bowler');
+        }
+
         document.getElementById('recent-balls').innerHTML = '';
     }
-    
 
-    // 🔥 MAIN FIX → STOP MATCH AT SELECTED OVERS
-    if (completedOvers >= gameState.totalOvers) {
-        endInnings();
-        return;
-    }
-
-    // ✅ Target chase (2nd innings)
-    if(gameState.innings === 2 && gameState.score >= gameState.target) {
+    // 🟢 Target chase (2nd innings)
+    if (gameState.innings === 2 && gameState.score >= gameState.target) {
         finishMatch();
     }
 }
+
+
+
+
+
     function renderBall(label) {
         const ball = document.createElement('div');
         ball.className = "w-8 h-8 flex-shrink-0 bg-surface border border-accent/20 rounded-full flex items-center justify-center text-[10px] font-bold";
@@ -1112,21 +999,96 @@ else {
         }
     }
     function startSecondInnings() {
-        // Swap roles
-        const temp = gameState.battingTeam;
-        gameState.battingTeam = gameState.bowlingTeam;
-        gameState.bowlingTeam = temp;
-        gameState.score = 0;
-        gameState.wickets = 0;
-        gameState.balls = 0;
-        gameState.strikerIdx = 0;
-        gameState.nonStrikerIdx = 1;
-        gameState.bowlerIdx = 10; // Simple switch
-        gameState.innings = 2;
-        navigateTo('scoring-page');
-        updateScoringUI();
-        document.getElementById('recent-balls').innerHTML = '';
-    }
+
+    // Swap teams
+    const temp = gameState.battingTeam;
+    gameState.battingTeam = gameState.bowlingTeam;
+    gameState.bowlingTeam = temp;
+
+    // Reset score
+    gameState.score = 0;
+    gameState.wickets = 0;
+    gameState.balls = 0;
+
+    // Reset players status
+    gameState.battingTeam.players.forEach(p => {
+        p.runs = 0;
+        p.balls = 0;
+        p.fours = 0;
+        p.sixes = 0;
+        p.status = 'not out';
+    });
+
+    gameState.bowlingTeam.players.forEach(p => {
+        p.wickets = 0;
+        p.runsConceded = 0;
+        p.ballsCommitted = 0;
+    });
+
+    gameState.innings = 2;
+
+    navigateTo('scoring-page');
+
+    // ❌ DON'T SET DEFAULT INDEX
+    gameState.strikerIdx = null;
+    gameState.nonStrikerIdx = null;
+    gameState.bowlerIdx = null;
+
+
+    document.getElementById('recent-balls').innerHTML = '';
+
+    // ✅ Ask user to select players
+    setTimeout(() => {
+        promptSelectOpeners();
+    }, 300);
+}
+
+
+
+
+
+
+function promptSelectOpeners() {
+
+    const modal = document.getElementById('modal-container');
+    const list = document.getElementById('modal-list');
+    const title = document.getElementById('modal-title');
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    title.innerText = "Select Opening Batsmen";
+
+    list.innerHTML = '';
+
+    gameState.battingTeam.players.forEach((p, idx) => {
+
+        const btn = document.createElement('button');
+        btn.className = "w-full bg-surface-variant p-3 rounded text-left font-bold";
+        btn.innerText = p.name;
+
+        btn.onclick = () => {
+            if (gameState.strikerIdx === null) {
+                gameState.strikerIdx = idx;
+                btn.style.background = "#E63946";
+            } else if (gameState.nonStrikerIdx === null && idx !== gameState.strikerIdx) {
+                gameState.nonStrikerIdx = idx;
+
+                modal.classList.add('hidden');
+
+                // After selecting batsmen → select bowler
+                promptNewPlayer('bowler');
+
+                updateScoringUI();
+            }
+        };
+
+        list.appendChild(btn);
+    });
+}
+
+
+
     function showScorecard(isInningsEnd = false) {
         const bBody = document.getElementById('batting-tbody');
         bBody.innerHTML = '';
@@ -1276,36 +1238,66 @@ if (gameState.matchOver) {
 
     // History Renderer
     function loadHistory() {
-        const container = document.getElementById('history-list');
-        if(gameState.matches.length === 0) return;
-        container.innerHTML = '';
-        gameState.matches.reverse().forEach(m => {
-            const card = document.createElement('div');
-            card.onclick = () => openMatchScorecard(m.id);
-            card.className = "bg-surface p-4 rounded-lg border border-accent/20 flex justify-between items-center";
-            card.innerHTML = `
-  <div class="flex justify-between items-center w-full">
 
-    <div>
-      <h4>${m.teamA.name} vs ${m.teamB.name}</h4>
-      <p class="text-xs text-primary font-bold uppercase mt-1">${m.result}</p>
-      <p class="text-xs text-accent">${m.date}</p>
-      
-    </div>
+    const container = document.getElementById('history-list');
 
-    <button 
-      onclick="deleteMatch(${m.id})"
-      class="text-red-500 text-lg"
-    >
-      🗑️
-    </button>
+    // 🔥 CLEAR UI FIRST
+    container.innerHTML = '';
 
-  </div>
-`;
-            container.appendChild(card);
-        });
+    // 🔥 EMPTY STATE FIX
+    if (gameState.matches.length === 0) {
+        container.innerHTML = `
+            <p class="text-center text-accent py-12">
+                No matches recorded yet.
+            </p>
+        `;
+        return;
     }
-    window.onload = loadHistory;
+
+    // 🔥 SAFE REVERSE (no mutation)
+    gameState.matches.slice().reverse().forEach(m => {
+
+        const card = document.createElement('div');
+        card.className = "bg-surface p-4 rounded-lg border border-accent/20 flex justify-between items-center";
+
+        // 👉 Card click (open scorecard)
+        card.onclick = () => openMatchScorecard(m.id);
+
+        card.innerHTML = `
+            <div class="flex justify-between items-center w-full">
+
+                <div>
+                    <h4>${m.teamA.name} vs ${m.teamB.name}</h4>
+                    <p class="text-xs text-primary font-bold uppercase mt-1">${m.result}</p>
+                    <p class="text-xs text-accent">${m.date}</p>
+                </div>
+
+                <button 
+                    class="text-red-500 text-lg delete-btn"
+                >
+                    🗑️
+                </button>
+
+            </div>
+        `;
+
+        // 🔥 FIX: Prevent card click when deleting
+        card.querySelector('.delete-btn').onclick = (e) => {
+            e.stopPropagation(); // ❗ IMPORTANT
+            deleteMatch(m.id);
+        };
+
+        container.appendChild(card);
+    });
+}
+
+function deleteMatch(id) {
+    gameState.matches = gameState.matches.filter(m => m.id !== id);
+    localStorage.setItem('matchHistory', JSON.stringify(gameState.matches));
+    loadHistory(); // 🔥 refresh UI
+}
+
+window.onload = loadHistory;
 </script>
 
 </body></html>
